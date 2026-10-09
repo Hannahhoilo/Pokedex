@@ -16,7 +16,7 @@ import Foundation
 /// dette hindrer at en view "jukser" og endrer dataen direkte, den må gå
 /// via `fetchDetailedPokemon(id:)`.
 @Observable
-class PokemonDetailRepository {
+class PokemonDetailsRepository {
 
     private(set) var pokemon: PokemonInfo?
 

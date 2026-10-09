@@ -18,18 +18,50 @@ struct PokemonDetailsView: View {
     /// .environment(...) på app-nivå, i stedet for å lage en ny selv.
     @Environment(PokemonDetailsRepository.self) private var repository
 
+    /// Samme gradient-prinsipp som i PokedexView, basert på Pokemonets typer
+    var backgroundGradient: LinearGradient {
+        let colors = (repository.pokemon?.types ?? []).map { Color.forPokemonType($0.type.name) }
+
+        let topColor: Color
+        let midColor: Color
+        if colors.count >= 2 {
+            topColor = colors[0]
+            midColor = colors[1]
+        } else if let firstColor = colors.first {
+            topColor = firstColor
+            midColor = firstColor
+        } else {
+            topColor = .black
+            midColor = .black
+        }
+
+        return LinearGradient(
+            stops: [
+                .init(color: topColor, location: 0.0),
+                .init(color: midColor.opacity(0.6), location: 0.55),
+                .init(color: midColor.opacity(0.0), location: 1.0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
     var body: some View {
-        ScrollView {
-            if let pokemon = repository.pokemon {
-                makePokemonView(pokemon: pokemon)
-            } else {
-                // Vises mens dataen fortsatt lastes inn
-                ProgressView()
-                    .padding(.top, 60)
+        ZStack {
+            backgroundGradient
+                .ignoresSafeArea()
+
+            ScrollView {
+                if let pokemon = repository.pokemon {
+                    makePokemonView(pokemon: pokemon)
+                } else {
+                    // Vises mens dataen fortsatt lastes inn
+                    ProgressView()
+                        .padding(.top, 60)
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .navigationTitle("Pokémon-info")
+        .navigationTitle("#\(String(format: "%04d", pokemonID))")
         // .task(id: pokemonID) kjører automatisk på nytt hvis pokemonID
         // endrer seg mens viewen fortsatt vises (samme mønster som i
         // PokedexView sin .task(id: pokemonID)).
@@ -43,7 +75,7 @@ struct PokemonDetailsView: View {
     private func makePokemonView(pokemon: PokemonInfo) -> some View {
         VStack(spacing: 16) {
             Text(pokemon.name.capitalized)
-                .font(.system(.title, design: .rounded, weight: .bold))
+                .font(.system(.largeTitle, design: .rounded, weight: .bold))
 
             AsyncImage(url: URL(string: pokemon.sprites.regularImage)) { image in
                 image
@@ -67,39 +99,54 @@ struct PokemonDetailsView: View {
                 }
             }
 
-            HStack(spacing: 40) {
-                VStack {
-                    Text(String(format: "%.1f m", Double(pokemon.height) / 10))
-                        .font(.system(.title3, design: .rounded, weight: .bold))
-                    Text("Height")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                VStack {
-                    Text(String(format: "%.1f kg", Double(pokemon.weight) / 10))
-                        .font(.system(.title3, design: .rounded, weight: .bold))
-                    Text("Weight")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Stats")
-                    .font(.headline)
-
-                ForEach(pokemon.stats, id: \.stat.name) { stat in
-                    HStack {
-                        Text(stat.stat.name.capitalized)
-                        Spacer()
-                        Text("\(stat.baseStat)")
-                            .bold()
+            infoCard(title: "Height / Weight") {
+                HStack(spacing: 40) {
+                    VStack {
+                        Text(String(format: "%.1f m", Double(pokemon.height) / 10))
+                            .font(.system(.title3, design: .rounded, weight: .bold))
+                        Text("Height")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    VStack {
+                        Text(String(format: "%.1f kg", Double(pokemon.weight) / 10))
+                            .font(.system(.title3, design: .rounded, weight: .bold))
+                        Text("Weight")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
-            .padding(.horizontal)
+
+            infoCard(title: "Stats") {
+                VStack(spacing: 8) {
+                    ForEach(pokemon.stats, id: \.stat.name) { stat in
+                        HStack {
+                            Text(stat.stat.name.capitalized)
+                            Spacer()
+                            Text("\(stat.baseStat)")
+                                .bold()
+                        }
+                    }
+                }
+            }
         }
         .padding()
+    }
+
+    /// Gjenbrukbar "kort"-wrapper, matcher stilen fra Bulbapedia-skjermbildene:
+    /// hvit, halvgjennomsiktig bakgrunn med avrundede hjørner rundt hver seksjon.
+    @ViewBuilder
+    private func infoCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+            content()
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(.white.opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     /// Kaller repository for å faktisk hente data. Bruker do/catch her
@@ -116,7 +163,7 @@ struct PokemonDetailsView: View {
 
 #Preview {
     NavigationStack {
-        PokemonDetailsView(pokemonID: 25)
+        PokemonDetailsView(pokemonID: 668)
             .environment(PokemonDetailsRepository())
     }
 }

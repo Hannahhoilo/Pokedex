@@ -272,13 +272,18 @@ struct PokedexView: View {
                         }
                     }
                 
-                TextField("Jump to #", text: $jumpText)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit {
-                        if let parsedNumber = Int(jumpText) {
-                            pokemonID = min(max(parsedNumber, 1), 1010)
+                VStack(spacing: 8) {
+                    TextField("Search", text: $searchText)
+                        .textFieldStyle(.roundedBorder)
+
+                    TextField("Jump to #", text: $jumpText)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            if let parsedNumber = Int(jumpText) {
+                                pokemonID = min(max(parsedNumber, 1), 1010)
+                            }
                         }
-                    }
+                }
             }
             .padding()
         }

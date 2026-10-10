@@ -99,21 +99,42 @@ struct PokemonDetailsView: View {
                 }
             }
 
-            infoCard(title: "Height / Weight") {
-                HStack(spacing: 40) {
-                    VStack {
-                        Text(String(format: "%.1f m", Double(pokemon.height) / 10))
-                            .font(.system(.title3, design: .rounded, weight: .bold))
-                        Text("Height")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+            infoCard(title: "Stats") {
+                VStack(spacing: 10) {
+                    ForEach(pokemon.stats, id: \.stat.name) { stat in
+                        HStack(spacing: 8) {
+                            Text(statLabel(stat.stat.name))
+                                .font(.subheadline.bold())
+                                .frame(width: 70, alignment: .leading)
+
+                            Text("\(stat.baseStat)")
+                                .font(.subheadline.bold())
+                                .frame(width: 34, alignment: .trailing)
+
+                            // Bar: grå bakgrunn med farget del oppå, bredden følger stat-verdien
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule()
+                                        .fill(Color.gray.opacity(0.15))
+                                    Capsule()
+                                        .fill(statColor(stat.stat.name))
+                                        .frame(width: geo.size.width * min(CGFloat(stat.baseStat) / 255, 1))
+                                }
+                            }
+                            .frame(height: 12)
+                        }
                     }
-                    VStack {
-                        Text(String(format: "%.1f kg", Double(pokemon.weight) / 10))
-                            .font(.system(.title3, design: .rounded, weight: .bold))
-                        Text("Weight")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+
+                    Divider()
+
+                    HStack(spacing: 8) {
+                        Text("Total")
+                            .font(.subheadline.bold())
+                            .frame(width: 70, alignment: .leading)
+                        Text("\(pokemon.stats.reduce(0) { $0 + $1.baseStat })")
+                            .font(.subheadline.bold())
+                            .frame(width: 34, alignment: .trailing)
+                        Spacer()
                     }
                 }
             }
@@ -132,6 +153,30 @@ struct PokemonDetailsView: View {
             }
         }
         .padding()
+    }
+    
+    private func statLabel(_ name: String) -> String {
+        switch name {
+        case "hp":              return "HP"
+        case "attack":          return "Attack"
+        case "defense":         return "Defense"
+        case "special-attack":  return "Sp. Atk"
+        case "special-defense": return "Sp. Def"
+        case "speed":           return "Speed"
+        default:                return name.capitalized
+        }
+    }
+
+    private func statColor(_ name: String) -> Color {
+        switch name {
+        case "hp":              return Color(red: 0.52, green: 0.85, blue: 0.25)
+        case "attack":          return Color(red: 0.91, green: 0.80, blue: 0.25)
+        case "defense":         return Color(red: 0.86, green: 0.42, blue: 0.17)
+        case "special-attack":  return Color(red: 0.33, green: 0.74, blue: 0.91)
+        case "special-defense": return Color(red: 0.31, green: 0.41, blue: 0.85)
+        case "speed":           return Color(red: 0.76, green: 0.16, blue: 0.65)
+        default:                return .gray
+        }
     }
 
     /// Gjenbrukbar "kort"-wrapper, matcher stilen fra Bulbapedia-skjermbildene:
